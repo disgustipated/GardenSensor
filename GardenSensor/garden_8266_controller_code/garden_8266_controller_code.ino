@@ -5,6 +5,7 @@
 #include <Wire.h>
 #include <PubSubClient.h>
 #include "DHT.h"
+#include <WiFiManager.h> //https://github.com/tzapu/WiFiManager
 
 #define DHTPIN 4     // Digital pin connected to the DHT sensor
 #define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
@@ -18,11 +19,10 @@ IPAddress gw(6, 13, 0, 1); //Gateway address. IP address of your router
 IPAddress sub(255, 255, 255, 0); //Subnet mask for this network
 
 const String SOFTWARE_VERSION = "2.0 garden_esp8266_controller_code.ino";
-const char* WIFI_SSID = "";
-const char* WIFI_PASSWORD = "";
 const char* DEVICENAME = "gardensensor"; 
 const int SENSOR_INFO_LED_PIN = 5;
 const int WIFI_INFO_LED_PIN = 2;
+const int WIFI_RESET_PIN = 14;
 const int DEVICE_ACTIVATE_PIN = 4;
 const long ACTIVATE_DURATION = 2000;
 const long CHECK_WIFI_INTERVAL = 30000;
@@ -38,11 +38,14 @@ MDNSResponder mdns;
 ESP8266WebServer server(80);
 WiFiClient espClient;
 PubSubClient client(espClient);
+WiFiManager wifiManager;
 DHT dht(DHTPIN, DHTTYPE);
 
 void setup() {
   Serial.begin(9600);
-  connectToWiFi();
+  pinMode(WIFI_RESET_PIN,INPUT);
+  digitalWrite(WIFI_RESET_PIN, LOW);
+  wifiManager.autoConnect("ESPSetup", "Setup1");
   client.setServer(mqtt_server, 1883);
   dht.begin();
 }
@@ -50,7 +53,13 @@ void(* resetFunc) (void) = 0; //declare reset function @ address 0
 
 //main loop
 void loop() {
-  checkWiFi();
+  Serial.println(WIFI_RESET_PIN);
+  //if ( digitalRead(WIFI_RESET_PIN) == HIGH ) {
+  //  WiFiManager wifiManager;
+  //  wifiManager.startConfigPortal("OnDemandAP");
+  //  Serial.println("Autoconnect portal running");
+  //}
+  //checkWiFi();
   checkMQTT();
   if (!client.connected()) {
     reconnect();
@@ -100,7 +109,7 @@ void checkMQTT() {
 void connectToWiFi() {
   WiFi.mode(WIFI_STA);
   WiFi.config(ip, gw, sub);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  //WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   Serial.print("Setting up MDNS responder");
   while (!mdns.begin(DEVICENAME)) {
