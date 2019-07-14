@@ -13,7 +13,7 @@
 #define mqtt_password "garden"
 #define topic "home/garden"
 
-IPAddress ip(6, 13, 0, 219); //Static IP address for this device.
+IPAddress ip(6, 13, 0, 220); //Static IP address for this device.
 IPAddress gw(6, 13, 0, 1); //Gateway address. IP address of your router
 IPAddress sub(255, 255, 255, 0); //Subnet mask for this network
 
@@ -22,9 +22,9 @@ const char* WIFI_SSID = "";
 const char* WIFI_PASSWORD = "";
 const char* DEVICENAME = "gardensensor"; 
 const int SENSOR_INFO_LED_PIN = 5;
-const int WIFI_INFO_LED_PIN = 2;
-const int DEVICE_ACTIVATE_PIN = 4;
-const long ACTIVATE_DURATION = 2000;
+const int WIFI_INFO_LED_PIN = 0;
+const int PUMP_ACTIVATE_PIN = 2;
+const long PUMP_ACTIVATE_DURATION = 12000;
 const long CHECK_WIFI_INTERVAL = 30000;
 const long CHECK_MQTT_INTERVAL = 30000;
 const long CHECK_SENSORS_INTERVAL = 5000;
@@ -41,6 +41,9 @@ PubSubClient client(espClient);
 DHT dht(DHTPIN, DHTTYPE);
 
 void setup() {
+  pinMode(SENSOR_INFO_LED_PIN, OUTPUT);
+  pinMode(WIFI_INFO_LED_PIN, OUTPUT);
+  pinMode(PUMP_ACTIVATE_PIN, OUTPUT);
   Serial.begin(9600);
   connectToWiFi();
   client.setServer(mqtt_server, 1883);
@@ -135,7 +138,7 @@ void reconnect() {
       }
     reconnectCount++;
     Serial.print("Attempting MQTT connection...");
-    if (client.connect("ESP8266Garden", mqtt_user, mqtt_password)) {
+    if (client.connect("ESP8266Tester", mqtt_user, mqtt_password)) {
       Serial.println("connected");
     } else {
       Serial.print("failed, rc=");
@@ -171,6 +174,7 @@ void checkSensors(){
     mqttMsg["humidity"] = h;
     mqttMsg["indx"] = hif;
     serializeJson(mqttMsg, Serial);
+    Serial.println();
     char buffer[512];
     size_t n = serializeJson(mqttMsg, buffer);
     client.publish(topic, buffer, n);
@@ -226,7 +230,7 @@ void handleRoot() {
               <script>\
                 function activateDevice(){\
                     var xhr = new XMLHttpRequest();\
-                    var url = \"http://6.13.0.219/device/activate\";\ 
+                    var url = \"http://%s/device/activate\";\ 
                     xhr.\open(\"POST\",url, true);\  
                     xhr.\send();\
                   }\
@@ -241,7 +245,7 @@ void handleRoot() {
               <button onclick=\"activateDevice()\">run pump</button>\
             </body>\
            </html>",
-           hr, min % 60, sec % 60, sensorDataTemp, sensorDataHumd, sensorDataIndx
+           WiFi.localIP().toString().c_str(), hr, min % 60, sec % 60, sensorDataTemp, sensorDataHumd, sensorDataIndx
            );
   server.send(200, "text/html", temp);
   digitalWrite(WIFI_INFO_LED_PIN, 0);
@@ -303,8 +307,15 @@ void activateDevice()
   deviceActivateStart = millis();
   Serial.print("Activating deviceActivateStart = ");
   Serial.println(deviceActivateStart);   
-  digitalWrite(DEVICE_ACTIVATE_PIN, HIGH);
-  digitalWrite(WIFI_INFO_LED_PIN,HIGH);
-  server.send(200,"text/plain", "OK"); 
-  digitalWrite(WIFI_INFO_LED_PIN,LOW);
+  
+  Serial.println(deviceActivateStart + PUMP_ACTIVATE_DURATION);
+  if (deviceActivateStart < (deviceActivateStart + PUMP_ACTIVATE_DURATION)){
+    digitalWrite(PUMP_ACTIVATE_PIN, HIGH);
+    //digitalWrite(WIFI_INFO_LED_PIN,HIGH);
+    //server.send(200,"text/plain", "OK"); 
+  //  yield();
+  }
+  //digitalWrite(WIFI_INFO_LED_PIN,LOW);
+  digitalWrite(PUMP_ACTIVATE_PIN, LOW);
+  server.send(200,"text/plain", "Pump Complete"); 
 }
