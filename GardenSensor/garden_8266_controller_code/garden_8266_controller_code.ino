@@ -14,10 +14,6 @@
 #define mqtt_password "garden"
 #define topic "home/garden"
 
-IPAddress ip(6, 13, 0, 219); //Static IP address for this device.
-IPAddress gw(6, 13, 0, 1); //Gateway address. IP address of your router
-IPAddress sub(255, 255, 255, 0); //Subnet mask for this network
-
 const String SOFTWARE_VERSION = "2.0 garden_esp8266_controller_code.ino";
 const char* DEVICENAME = "gardensensor"; 
 const int SENSOR_INFO_LED_PIN = 5;
@@ -35,7 +31,7 @@ unsigned long prevMillisMQTT = 0;
 unsigned long currMillis = millis();
 
 MDNSResponder mdns;
-ESP8266WebServer server(80);
+ESP8266WebServer server(8266); //this cant be running on port 80 because of the wifimanager
 WiFiClient espClient;
 PubSubClient client(espClient);
 WiFiManager wifiManager;
@@ -43,28 +39,33 @@ DHT dht(DHTPIN, DHTTYPE);
 
 void setup() {
   Serial.begin(9600);
-  pinMode(WIFI_RESET_PIN,INPUT);
-  digitalWrite(WIFI_RESET_PIN, LOW);
+  pinMode(WIFI_RESET_PIN,INPUT_PULLUP);
+  wifiManager.setSTAStaticIPConfig(IPAddress(6,13,0,218), IPAddress(6,13,0,1), IPAddress(255,255,255,0)); //Remove this for DHCP
   wifiManager.autoConnect("ESPSetup", "Setup1");
   client.setServer(mqtt_server, 1883);
   dht.begin();
+  setupWeb();
 }
 void(* resetFunc) (void) = 0; //declare reset function @ address 0
 
 //main loop
 void loop() {
-  Serial.println(WIFI_RESET_PIN);
-  //if ( digitalRead(WIFI_RESET_PIN) == HIGH ) {
-  //  WiFiManager wifiManager;
-  //  wifiManager.startConfigPortal("OnDemandAP");
-  //  Serial.println("Autoconnect portal running");
-  //}
-  //checkWiFi();
+  // wire a button with a 10k resistor to ground and the other end to pin 14 for resetting and to prompt for new network
+  if ( digitalRead(WIFI_RESET_PIN) == LOW ) {
+    WiFiManager wifiManager;
+    wifiManager.setTimeout(600);
+    WiFi.mode(WIFI_STA);
+    wifiManager.startConfigPortal("OnDemandAP");
+    Serial.println("Autoconnect portal running");
+  }
+  //checking if mqtt is connected
   checkMQTT();
   if (!client.connected()) {
     reconnect();
   }
+  
   client.loop();
+  
   checkSensors();
   //need to add logic to handle multiple different devices in the server in the wifi.connect where the server.on are declared. need to add
   //sprinkler - this will be a relay that triggers the water relay thing connected to the inlet from the house water when the humidity is low - need to run some sprinkler things from the roof runners
@@ -75,17 +76,7 @@ void loop() {
 }
 
 //functions below
-//checkwifi checks if wifi is connected and if not reconnects
-void checkWiFi() {
-  currMillis = millis();
-  if (currMillis - prevMillisWiFi >= CHECK_WIFI_INTERVAL)
-  {
-    Serial.println("Checking WIFI");
-    prevMillisWiFi = currMillis;
-    if (WiFi.status() != WL_CONNECTED)
-      connectToWiFi();
-  }
-}
+
 //checks connection to mqtt and attempts connection if not connected
 void checkMQTT() {
   currMillis = millis();
@@ -105,46 +96,13 @@ void checkMQTT() {
     }
   }
 }
-//used in checkwifi() to init wifi connection
-void connectToWiFi() {
-  WiFi.mode(WIFI_STA);
-  WiFi.config(ip, gw, sub);
-  //WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-
-  Serial.print("Setting up MDNS responder");
-  while (!mdns.begin(DEVICENAME)) {
-    delay(1000);
-    Serial.print(".");
-  }
-  Serial.println("");
-  Serial.println("MDNS responder started");
-
-  while (WiFi.status() != WL_CONNECTED) {
-    digitalWrite(WIFI_INFO_LED_PIN, HIGH);
-    delay(500);
-    digitalWrite(WIFI_INFO_LED_PIN, LOW);
-    delay(500);
-  }
-  digitalWrite(WIFI_INFO_LED_PIN, LOW);
-
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-
-  setupWeb();
-}
 
 void reconnect() {
   int reconnectCount = 0;
   // Loop until we're reconnected
   while (!client.connected()) {
-    if (reconnectCount > 12){
-      checkWiFi();
-      }
-    reconnectCount++;
     Serial.print("Attempting MQTT connection...");
-    if (client.connect("ESP8266Garden", mqtt_user, mqtt_password)) {
+    if (client.connect("ESP8266GardenTest", mqtt_user, mqtt_password)) {
       Serial.println("connected");
     } else {
       Serial.print("failed, rc=");
