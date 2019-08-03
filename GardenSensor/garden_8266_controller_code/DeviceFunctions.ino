@@ -72,7 +72,7 @@ void activatePump()
   Serial.print("Activating deviceActivateStart = ");
   Serial.println(deviceActivateStart);   
   Serial.println(deviceActivateStart + ACTIVATE_DURATION);
-  digitalWrite(PUMP_ACTIVATE_PIN, LOW);
+  digitalWrite(PUMP_ACTIVATE_PIN, LOW); //reversed these to prevent relay from going on during a reboot
   digitalWrite(WIFI_INFO_LED_PIN,LOW);
 }
 

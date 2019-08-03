@@ -69,7 +69,7 @@ void setup() {
   //scheduler
   setTime((int)timeStruct.hours,(int)timeStruct.minutes,(int)timeStruct.seconds,1,1,19);
   Alarm.alarmRepeat(7,0,0, activatePump);
-  Alarm.alarmRepeat(12,0,0, activatePump);
+  Alarm.alarmRepeat(12,30,0, activatePump);
   //Alarm.timerRepeat(15, activatePump);
 }
 
@@ -90,7 +90,7 @@ void loop() {
   }
   client.loop();
   checkSensors();
-  pumpRunning(); // wire a relay to pin 12 
+  pumpRunning(); // wire a relay to pin 12 to the in1 on the relay, 5v to vcc and ground to ground
   //need to add logic to handle multiple different devices in the server in the wifi.connect where the server.on are declared. need to add
   //sprinkler - this will be a relay that triggers the water relay thing connected to the inlet from the house water when the humidity is low - need to run some sprinkler things from the roof runners
   //soak - this will be connected to a water relay thinger thats run off of the rain barrels if they are above a certain level
