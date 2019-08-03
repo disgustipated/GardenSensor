@@ -23,7 +23,7 @@ const char* DEVICENAME = "gardensensor";
 const int SENSOR_INFO_LED_PIN = 5;
 const int WIFI_INFO_LED_PIN = 2;
 const int WIFI_RESET_PIN = 14;
-const int DEVICE_ACTIVATE_PIN = 4;
+const int PUMP_ACTIVATE_PIN = 12;
 const long ACTIVATE_DURATION = 2000;
 const long CHECK_WIFI_INTERVAL = 30000;
 const long CHECK_MQTT_INTERVAL = 30000;
@@ -54,6 +54,10 @@ NTPClient timeClient(time_udp, ntpServer, ntpOffset * 3600);
 void setup() {
   Serial.begin(9600);
   pinMode(WIFI_RESET_PIN,INPUT_PULLUP);
+  pinMode(WIFI_INFO_LED_PIN,OUTPUT);
+  pinMode(PUMP_ACTIVATE_PIN,OUTPUT);
+  digitalWrite(PUMP_ACTIVATE_PIN,LOW);
+  pinMode(SENSOR_INFO_LED_PIN,OUTPUT);
   //wifiManager.setSTAStaticIPConfig(IPAddress(6,13,0,218), IPAddress(6,13,0,1), IPAddress(255,255,255,0)); //Remove this for DHCP
   wifiManager.autoConnect("ESPSetup", "Setup1");
   client.setServer(mqtt_server, 1883);
@@ -83,10 +87,11 @@ void loop() {
   }
   client.loop();
   checkSensors();
+  pumpRunning();
   //need to add logic to handle multiple different devices in the server in the wifi.connect where the server.on are declared. need to add
   //sprinkler - this will be a relay that triggers the water relay thing connected to the inlet from the house water when the humidity is low - need to run some sprinkler things from the roof runners
   //soak - this will be connected to a water relay thinger thats run off of the rain barrels if they are above a certain level
   //manual water - this will handle watering if the rain barrels are empty
   server.handleClient();
-  Alarm.delay(1000);
+  //Alarm.delay(1000);
 }

@@ -32,9 +32,9 @@ void handleRoot() {
                 body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }\
               </style>\
               <script>\
-                function activateDevice(){\
+                function activatePump(){\
                     var xhr = new XMLHttpRequest();\
-                    var url = \"http://6.13.0.219/device/activate\";\ 
+                    var url = \"http://6.13.0.121:8266/device/activatePump\";\ 
                     xhr.\open(\"POST\",url, true);\  
                     xhr.\send();\
                   }\
@@ -46,7 +46,7 @@ void handleRoot() {
               <p>Temp: %f</p>\
               <p>Humidity: %f</p>\
               <p>Heat Index: %f</p>\
-              <button onclick=\"activateDevice()\">run pump</button>\
+              <button onclick=\"activatePump()\">Run Pump</button>\
             </body>\
            </html>",
            hr, min % 60, sec % 60, sensorDataTemp, sensorDataHumd, sensorDataIndx

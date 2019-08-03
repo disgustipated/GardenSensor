@@ -1,5 +1,8 @@
 void checkSensors(){
+  currMillis = millis();
+  if (currMillis - prevMillisSensors >= CHECK_SENSORS_INTERVAL){
   StaticJsonDocument<50> mqttDoc;
+  prevMillisSensors = currMillis;
   JsonObject mqttMsg = mqttDoc.to<JsonObject>();
   
   float h = dht.readHumidity();
@@ -33,11 +36,12 @@ void checkSensors(){
       size_t n = serializeJson(mqttMsg, buffer);
       client.publish(topic, buffer, n);
       }
+  }
 }
 
 //web functions for devices
 String getWaterLevel(int OpenSensor, int CloseSensor) {
-  //old code repurposed from the garage door
+  //old code repurposed from the garage door, not implemented yet
   String state = "AJAR";
   Serial.println(digitalRead(OpenSensor));
   Serial.println(digitalRead(CloseSensor));
@@ -50,15 +54,32 @@ String getWaterLevel(int OpenSensor, int CloseSensor) {
   Serial.println(state);
 return state;
 }
+
+void pumpRunning()
+{
+  //should the pump be running
+  currMillis = millis();
+  if ((digitalRead(PUMP_ACTIVATE_PIN) == HIGH) && (currMillis > (deviceActivateStart + ACTIVATE_DURATION))){
+    stopPump();
+    }
+}
+
 void activatePump()
 {
   //this will need to be used to activate the pump on the rain barrel, manual water from hose, and sprinkler
   deviceActivateStart = millis();
+  server.send(200,"text/plain", "OK"); 
   Serial.print("Activating deviceActivateStart = ");
   Serial.println(deviceActivateStart);   
-  digitalWrite(DEVICE_ACTIVATE_PIN, HIGH);
+  Serial.println(deviceActivateStart + ACTIVATE_DURATION);
+  digitalWrite(PUMP_ACTIVATE_PIN, HIGH);
   digitalWrite(WIFI_INFO_LED_PIN,HIGH);
-  server.send(200,"text/plain", "OK"); 
+}
+
+void stopPump()
+{
+  Serial.println("Stopping pump");
+  digitalWrite(PUMP_ACTIVATE_PIN, LOW);
   digitalWrite(WIFI_INFO_LED_PIN,LOW);
 }
 
