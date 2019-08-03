@@ -1,7 +1,7 @@
 //Webpage setup and config
 void setupWeb(){
 //  server.on("/device/levelstatus", HTTP_GET, getWaterLevel);
-  server.on("/device/activate", HTTP_POST, activateDevice);
+  server.on("/device/activatePump", HTTP_POST, activatePump);
   server.on("/version", HTTP_GET, getVersion);
   server.on("/", handleRoot);
   server.on("/test.svg", drawGraph);

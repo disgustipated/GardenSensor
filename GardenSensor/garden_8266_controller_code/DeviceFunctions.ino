@@ -1,5 +1,4 @@
 void checkSensors(){
-  delay(2000);
   StaticJsonDocument<50> mqttDoc;
   JsonObject mqttMsg = mqttDoc.to<JsonObject>();
   
@@ -51,7 +50,7 @@ String getWaterLevel(int OpenSensor, int CloseSensor) {
   Serial.println(state);
 return state;
 }
-void activateDevice()
+void activatePump()
 {
   //this will need to be used to activate the pump on the rain barrel, manual water from hose, and sprinkler
   deviceActivateStart = millis();
@@ -61,4 +60,16 @@ void activateDevice()
   digitalWrite(WIFI_INFO_LED_PIN,HIGH);
   server.send(200,"text/plain", "OK"); 
   digitalWrite(WIFI_INFO_LED_PIN,LOW);
+}
+
+void getTimeFromNtp() {
+  // Begin NTP
+  Serial.print("Begin NTP...");
+  timeClient.begin();
+  while (!timeClient.update()) yield();
+  timeStruct.hours = timeClient.getHours();
+  timeStruct.minutes = timeClient.getMinutes();
+  timeStruct.seconds = timeClient.getSeconds();
+  timeStruct.nextNtp = ntpInterval;
+  Serial.println(" OK.");
 }

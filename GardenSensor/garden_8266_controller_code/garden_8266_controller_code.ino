@@ -3,9 +3,13 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 #include <Wire.h>
-#include <PubSubClient.h>
+#include <PubSubClient.h> //https://github.com/knolleary/pubsubclient
 #include "DHT.h"
 #include <WiFiManager.h> //https://github.com/tzapu/WiFiManager
+#include <Time.h>
+#include <TimeAlarms.h>  //https://github.com/PaulStoffregen/TimeAlarms
+#include <NTPClient.h>   //https://github.com/arduino-libraries/NTPClient
+#include <WiFiUdp.h>
 
 #define DHTPIN 4     // Digital pin connected to the DHT sensor
 #define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
@@ -29,24 +33,38 @@ unsigned long prevMillisSensors = 0;
 unsigned long prevMillisWiFi = 0;
 unsigned long prevMillisMQTT = 0;
 unsigned long currMillis = millis();
-
+const char*   ntpServer   = "0.us.pool.ntp.org";
+const int8_t  ntpOffset   = -4; // hours
+const uint8_t ntpInterval = 5; // minutes
+struct {
+  uint8_t hours;
+  uint8_t minutes;
+  uint8_t seconds;
+  uint8_t nextNtp;
+} timeStruct;
 MDNSResponder mdns;
 ESP8266WebServer server(8266); //this cant be running on port 80 because of the wifimanager
 WiFiClient espClient;
 PubSubClient client(espClient);
 WiFiManager wifiManager;
 DHT dht(DHTPIN, DHTTYPE);
+WiFiUDP time_udp;
+NTPClient timeClient(time_udp, ntpServer, ntpOffset * 3600);
 
 void setup() {
   Serial.begin(9600);
   pinMode(WIFI_RESET_PIN,INPUT_PULLUP);
-  wifiManager.setSTAStaticIPConfig(IPAddress(6,13,0,218), IPAddress(6,13,0,1), IPAddress(255,255,255,0)); //Remove this for DHCP
+  //wifiManager.setSTAStaticIPConfig(IPAddress(6,13,0,218), IPAddress(6,13,0,1), IPAddress(255,255,255,0)); //Remove this for DHCP
   wifiManager.autoConnect("ESPSetup", "Setup1");
   client.setServer(mqtt_server, 1883);
   dht.begin();
   setupWeb();
+  getTimeFromNtp();
+  Serial.println((String)"Current Time: " + timeStruct.hours + ":" + timeStruct.minutes + ":" + timeStruct.seconds);
+  //scheduler
+  setTime((int)timeStruct.hours,(int)timeStruct.minutes,(int)timeStruct.seconds,1,1,19);
+  Alarm.alarmRepeat(12,28,0, activatePump);
 }
-void(* resetFunc) (void) = 0; //declare reset function @ address 0
 
 //main loop
 void loop() {
@@ -70,4 +88,5 @@ void loop() {
   //soak - this will be connected to a water relay thinger thats run off of the rain barrels if they are above a certain level
   //manual water - this will handle watering if the rain barrels are empty
   server.handleClient();
+  Alarm.delay(1000);
 }
