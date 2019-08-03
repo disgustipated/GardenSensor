@@ -16,6 +16,7 @@ void setupWeb(){
 //main web service host
 void handleRoot() { 
   digitalWrite(WIFI_INFO_LED_PIN, 1);
+  String currentip = WiFi.localIP().toString();
   char temp[1500];
   int sec = millis() / 1000;
   int min = sec / 60;
@@ -23,6 +24,7 @@ void handleRoot() {
   float sensorDataTemp = dht.readTemperature(true);
   float sensorDataHumd = dht.readHumidity();
   float sensorDataIndx = dht.computeHeatIndex(sensorDataTemp,sensorDataHumd);
+  //conversion specifiers https://www.programiz.com/cpp-programming/library-function/cstdio/sprintf
   snprintf(temp, 1500,
            "<html>\
             <head>\
@@ -34,7 +36,7 @@ void handleRoot() {
               <script>\
                 function activatePump(){\
                     var xhr = new XMLHttpRequest();\
-                    var url = \"http://6.13.0.121:8266/device/activatePump\";\ 
+                    var url = \"http://%s:%d/device/activatePump\";\ 
                     xhr.\open(\"POST\",url, true);\  
                     xhr.\send();\
                   }\
@@ -49,7 +51,7 @@ void handleRoot() {
               <button onclick=\"activatePump()\">Run Pump</button>\
             </body>\
            </html>",
-           hr, min % 60, sec % 60, sensorDataTemp, sensorDataHumd, sensorDataIndx
+           currentip.c_str(),statusPagePort, hr, min % 60, sec % 60, sensorDataTemp, sensorDataHumd, sensorDataIndx
            );
   server.send(200, "text/html", temp);
   digitalWrite(WIFI_INFO_LED_PIN, 0);

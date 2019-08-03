@@ -18,6 +18,7 @@
 #define mqtt_password "garden"
 #define topic "home/garden"
 
+const int  statusPagePort = 8266;
 const String SOFTWARE_VERSION = "2.0 garden_esp8266_controller_code.ino";
 const char* DEVICENAME = "gardensensor"; 
 const int SENSOR_INFO_LED_PIN = 5;
@@ -43,7 +44,7 @@ struct {
   uint8_t nextNtp;
 } timeStruct;
 MDNSResponder mdns;
-ESP8266WebServer server(8266); //this cant be running on port 80 because of the wifimanager
+ESP8266WebServer server(statusPagePort); //this cant be running on port 80 because of the wifimanager
 WiFiClient espClient;
 PubSubClient client(espClient);
 WiFiManager wifiManager;
