@@ -17,6 +17,7 @@ void setupWeb(){
 void handleRoot() { 
   digitalWrite(WIFI_INFO_LED_PIN, 1);
   String currentip = WiFi.localIP().toString();
+  String currentTime = ((String)hourFormat12() + ":" + minute());
   char temp[1500];
   int sec = millis() / 1000;
   int min = sec / 60;
@@ -44,6 +45,7 @@ void handleRoot() {
             </head>\
             <body>\
               <h1>Garden ESP8266</h1>\
+              <p>Current Time: %s</p>\
               <p>Uptime: %02d:%02d:%02d</p>\
               <p>Temp: %f</p>\
               <p>Humidity: %f</p>\
@@ -51,7 +53,7 @@ void handleRoot() {
               <button onclick=\"activatePump()\">Run Pump</button>\
             </body>\
            </html>",
-           currentip.c_str(),statusPagePort, hr, min % 60, sec % 60, sensorDataTemp, sensorDataHumd, sensorDataIndx
+           currentip.c_str(),statusPagePort, currentTime.c_str(), hr, min % 60, sec % 60, sensorDataTemp, sensorDataHumd, sensorDataIndx
            );
   server.send(200, "text/html", temp);
   digitalWrite(WIFI_INFO_LED_PIN, 0);

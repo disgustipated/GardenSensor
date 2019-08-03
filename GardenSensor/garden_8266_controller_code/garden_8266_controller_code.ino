@@ -19,13 +19,13 @@
 #define topic "home/garden"
 
 const int  statusPagePort = 8266;
-const String SOFTWARE_VERSION = "2.0 garden_esp8266_controller_code.ino";
+const String SOFTWARE_VERSION = "2.1 garden_esp8266_controller_code.ino - Pump control";
 const char* DEVICENAME = "gardensensor"; 
 const int SENSOR_INFO_LED_PIN = 5;
 const int WIFI_INFO_LED_PIN = 2;
 const int WIFI_RESET_PIN = 14;
 const int PUMP_ACTIVATE_PIN = 12;
-const long ACTIVATE_DURATION = 2000;
+const long ACTIVATE_DURATION = 300000;
 const long CHECK_WIFI_INTERVAL = 30000;
 const long CHECK_MQTT_INTERVAL = 30000;
 const long CHECK_SENSORS_INTERVAL = 5000;
@@ -57,7 +57,7 @@ void setup() {
   pinMode(WIFI_RESET_PIN,INPUT_PULLUP);
   pinMode(WIFI_INFO_LED_PIN,OUTPUT);
   pinMode(PUMP_ACTIVATE_PIN,OUTPUT);
-  digitalWrite(PUMP_ACTIVATE_PIN,LOW);
+  digitalWrite(PUMP_ACTIVATE_PIN,HIGH);
   pinMode(SENSOR_INFO_LED_PIN,OUTPUT);
   //wifiManager.setSTAStaticIPConfig(IPAddress(6,13,0,218), IPAddress(6,13,0,1), IPAddress(255,255,255,0)); //Remove this for DHCP
   wifiManager.autoConnect("ESPSetup", "Setup1");
@@ -68,7 +68,9 @@ void setup() {
   Serial.println((String)"Current Time: " + timeStruct.hours + ":" + timeStruct.minutes + ":" + timeStruct.seconds);
   //scheduler
   setTime((int)timeStruct.hours,(int)timeStruct.minutes,(int)timeStruct.seconds,1,1,19);
-  Alarm.alarmRepeat(12,28,0, activatePump);
+  Alarm.alarmRepeat(7,0,0, activatePump);
+  Alarm.alarmRepeat(12,0,0, activatePump);
+  //Alarm.timerRepeat(15, activatePump);
 }
 
 //main loop
@@ -88,11 +90,11 @@ void loop() {
   }
   client.loop();
   checkSensors();
-  pumpRunning();
+  pumpRunning(); // wire a relay to pin 12 
   //need to add logic to handle multiple different devices in the server in the wifi.connect where the server.on are declared. need to add
   //sprinkler - this will be a relay that triggers the water relay thing connected to the inlet from the house water when the humidity is low - need to run some sprinkler things from the roof runners
   //soak - this will be connected to a water relay thinger thats run off of the rain barrels if they are above a certain level
   //manual water - this will handle watering if the rain barrels are empty
   server.handleClient();
-  //Alarm.delay(1000);
+  Alarm.delay(100);
 }

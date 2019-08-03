@@ -23,7 +23,7 @@ void checkSensors(){
     mqttMsg["temp"] = f;
     mqttMsg["humidity"] = h;
     mqttMsg["indx"] = hif;
-    serializeJson(mqttMsg, Serial);
+    //serializeJsonPretty(mqttMsg, Serial);
     char buffer[512];
     size_t n = serializeJson(mqttMsg, buffer);
     client.publish(topic, buffer, n);
@@ -59,28 +59,28 @@ void pumpRunning()
 {
   //should the pump be running
   currMillis = millis();
-  if ((digitalRead(PUMP_ACTIVATE_PIN) == HIGH) && (currMillis > (deviceActivateStart + ACTIVATE_DURATION))){
+  if ((digitalRead(PUMP_ACTIVATE_PIN) == LOW) && (currMillis > (deviceActivateStart + ACTIVATE_DURATION))){
     stopPump();
     }
 }
 
 void activatePump()
 {
-  //this will need to be used to activate the pump on the rain barrel, manual water from hose, and sprinkler
+  Alarm.delay(500);
   deviceActivateStart = millis();
   server.send(200,"text/plain", "OK"); 
   Serial.print("Activating deviceActivateStart = ");
   Serial.println(deviceActivateStart);   
   Serial.println(deviceActivateStart + ACTIVATE_DURATION);
-  digitalWrite(PUMP_ACTIVATE_PIN, HIGH);
-  digitalWrite(WIFI_INFO_LED_PIN,HIGH);
+  digitalWrite(PUMP_ACTIVATE_PIN, LOW);
+  digitalWrite(WIFI_INFO_LED_PIN,LOW);
 }
 
 void stopPump()
 {
   Serial.println("Stopping pump");
-  digitalWrite(PUMP_ACTIVATE_PIN, LOW);
-  digitalWrite(WIFI_INFO_LED_PIN,LOW);
+  digitalWrite(PUMP_ACTIVATE_PIN, HIGH);
+  digitalWrite(WIFI_INFO_LED_PIN,HIGH);
 }
 
 void getTimeFromNtp() {
